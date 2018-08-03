@@ -530,6 +530,11 @@ RUN mv /usr/bin/ssh /usr/bin/ssh.original \
   && chmod 755 /usr/bin/ssh
 
 COPY hostingstart.html /home/site/wwwroot/hostingstart.html
+COPY KuduStaticFiles/503.html /opt/Kudu/503.html
+COPY KuduStaticFiles/_Layout.cshtml /opt/Kudu/_Layout.cshtml
+COPY KuduStaticFiles/AppService.png /opt/Kudu/Content/Images/AppService.png
+COPY KuduStaticFiles/linux_favicon.ico /opt/Kudu/linux_favicon.ico
+
 RUN chmod -R 777 /home \
   && rm -rf /tmp/*
 
