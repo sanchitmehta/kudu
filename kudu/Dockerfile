@@ -3,21 +3,14 @@ MAINTAINER Nazim Lala <naziml@microsoft.com>
 
 ENV DEBIAN_FRONTEND noninteractive
 
-COPY mod_mono.tar /tmp
-
 # Install dependencies
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
   --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF \
-  && echo "deb http://download.mono-project.com/repo/debian jessie/snapshots/5.0.0.100/. main" > \
-  /etc/apt/sources.list.d/mono-xamarin.list \
   && echo "deb http://ftp.debian.org/debian jessie-backports main" >> /etc/apt/sources.list \
   && apt-get update \
   && apt-get install -y apt-utils --no-install-recommends \
   && apt-get install -y unzip --no-install-recommends \
   && apt-get install -y xz-utils --no-install-recommends \
-  && apt-get install -y mono-complete --no-install-recommends \
-  && apt-get install -y mono-apache-server4 --no-install-recommends \
-  && apt-get install -y libapache2-mod-mono --no-install-recommends \
   && apt-get install -y -t jessie-backports git --no-install-recommends \
   && apt-get install -y openssh-client --no-install-recommends \
   && apt-get install -y vim tree --no-install-recommends \
@@ -58,10 +51,8 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
   && a2enmod headers \
   && a2enmod proxy_balancer \
   && a2enmod proxy_connect \
-  && a2enmod proxy_html \
-  && tar -xf /tmp/mod_mono.tar \
-  && cp mod_mono.so.0.0.0 /usr/lib/apache2/modules/mod_mono.so.0.0.0
-
+  && a2enmod proxy_html 
+  
 # Install npm and node
 RUN mkdir -p /opt/npm/2.15.8/node_modules \
   && unzip -q /tmp/npm-2.15.8.zip -d /opt/npm/2.15.8/node_modules \
@@ -185,11 +176,6 @@ RUN mkdir -p /opt/npm/2.15.8/node_modules \
   && ln -s /opt/npm/3.10.10/node_modules /usr/bin/node_modules
 
 ENV PATH $PATH:/opt/nodejs/6.11.0/bin
-
-# Upgrade mono
-RUN echo "deb http://download.mono-project.com/repo/debian beta/. main" | tee /etc/apt/sources.list.d/mono-xamarin-c7-ms.list \
-  && apt-get update \
-  && apt-get install -y libmono-system-net-http-webrequest4.0-cil --no-install-recommends
 
 # Ruby installations
 
@@ -502,10 +488,6 @@ RUN mkdir /opt/LogAnalyzer \
 COPY startup.sh /
 RUN chmod 755 /startup.sh \
   && mkdir -p /home/LogFiles
-
-# Remove extraneous config mono config load that starts up
-# an unnecessary mono process
-RUN sed -i '$d' /etc/apache2/mods-enabled/mod_mono.conf
 
 # Install TunnelExtension
 COPY TunnelExtension.zip /tmp
