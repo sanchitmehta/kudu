@@ -52,12 +52,17 @@ export SCM_BIN_PATH=/opt/Kudu/bin
 # because they aren't responding fast enough, and it parallelizes
 # mod-mono-server startup with apache startup, resulting in faster cold start.
 # mod_mono will still spawn new instances in the event that this one exits early.
-runuser -p -u "$USER_NAME" -- /usr/bin/mono /usr/lib/mono/4.5/mod-mono-server4.exe \
-  --filename /tmp/mod_mono_server_default --applications /:/opt/Kudu,/loganalyzer:/opt/LogAnalyzer --nonstop &
+#runuser -p -u "$USER_NAME" -- /usr/bin/mono /usr/lib/mono/4.5/mod-mono-server4.exe \
+#  --filename /tmp/mod_mono_server_default --applications /:/opt/Kudu,/loganalyzer:/opt/LogAnalyzer --nonstop &
 
-while [ ! -S /tmp/mod_mono_server_default ] ; do
- sleep 1
-done
+
+#while [ ! -S /tmp/mod_mono_server_default ] ; do
+# sleep 1
+#done
+
+
+#Running Kudu
+/bin/bash -c "dotnet /opt/Kudu/Kudu.Services.Web.dll &"
 
 #Run apache
 /usr/sbin/apache2ctl -D FOREGROUND
