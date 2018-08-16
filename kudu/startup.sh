@@ -62,7 +62,7 @@ export SCM_BIN_PATH=/opt/Kudu/bin
 
 
 #Running Kudu
-/bin/bash -c "dotnet /opt/Kudu/Kudu.Services.Web.dll &"
+/bin/bash -c "dotnet /opt/Kudu/Kudu.Services.Web/bin/Release/netcoreapp2.1/publish/Kudu.Services.Web.dll &"
 
 #Run apache
 /usr/sbin/apache2ctl -D FOREGROUND

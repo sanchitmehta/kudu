@@ -41,7 +41,7 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
   && wget -O /tmp/npm-5.4.2.zip https://github.com/npm/npm/archive/v5.4.2.zip \
   && wget -O /tmp/npm-5.6.0.zip https://github.com/npm/npm/archive/v5.6.0.zip \
   && wget -O /tmp/npm-6.0.1.zip https://github.com/npm/npm/archive/v6.0.1.zip \
-  && ln -s ../mods-available/xml2enc.load /etc/apache2/mods-enabled \
+  && ln -s ../mods-available/xml2enc.load /etc/nginx/modules-enabled \
   && a2enmod proxy \
   && a2enmod proxy_http \
   && a2enmod proxy_wstunnel \
@@ -177,6 +177,15 @@ RUN mkdir -p /opt/npm/2.15.8/node_modules \
 
 ENV PATH $PATH:/opt/nodejs/6.11.0/bin
 
+
+# Nginx Installation
+RUN apt-get install nginx
+  && ufw allow 'Nginx HTTP'
+
+# Installing KuduLight
+RUN git clone https://github.com/sanchitmehta/KuduLight.git /opt/Kudu
+  &&
+
 # Ruby installations
 
 # Dependencies for various ruby and rubygem installations
@@ -300,9 +309,6 @@ RUN apt-get update \
   && apt-get update \
   && apt-get install -y --no-install-recommends php5-cli php5.6-zip php5.6-mbstring php5.6-xml php5-mysql php5-pgsql php5-curl php5-json php5-gd php5-gmp php5-imagick php5-imap php5-intl php5-ldap php5.6-mbstring php5-odbc php5-readline php5.6-SimpleXML php5.6-soap php5-sqlite php5-tidy php5.6-wddx php5-xmlrpc php5.6-xmlwriter php5-xsl
 
-# install apache2
-RUN apt-get install -y apache2 
-
 # mcrypt
 RUN apt-get install -y --no-install-recommends php5-mcrypt \
   && php5enmod mcrypt 
@@ -326,16 +332,16 @@ RUN apt-get update \
   && pecl install sqlsrv pdo_sqlsrv \
   && echo extension=pdo_sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/30-pdo_sqlsrv.ini \
   && echo extension=sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/20-sqlsrv.ini \
-  && apt-get install -y libapache2-mod-php7.2 \
   && a2dismod mpm_event \
   && a2enmod mpm_prefork \
   && a2enmod php7.2 \
-  && echo "extension=pdo_sqlsrv.so" >> /etc/php/7.2/apache2/conf.d/30-pdo_sqlsrv.ini \
-  && echo "extension=sqlsrv.so" >> /etc/php/7.2/apache2/conf.d/20-sqlsrv.ini 
+  && echo "extension=pdo_sqlsrv.so" >> /etc/php/7.2/nginx/conf.d/30-pdo_sqlsrv.ini \
+  && echo "extension=sqlsrv.so" >> /etc/php/7.2/nginx/conf.d/20-sqlsrv.ini 
+
 
 # restart apache2  
-RUN service apache2 restart
-
+RUN service nginx restart  
+  
 # PHP Composer
 RUN php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');" \
   && php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet \
@@ -457,22 +463,14 @@ RUN pip3 install virtualenv
 
 # Install Kudu
 COPY kudu.conf /tmp
-COPY apache2.conf /tmp
 RUN npm install -g kudusync \
-  && cp /tmp/kudu.conf /etc/apache2/sites-available/kudu.conf \
-  && cp /tmp/apache2.conf /etc/apache2/apache2.conf  \
-  && mkdir /opt/Kudu \
-  && cp -rf ./KuduCompiled/* /opt/Kudu \
-  && rm -f /tmp/apache2.conf \
+  && cp /tmp/kudu.conf /etc/nginx/sites-available/kudu.conf \
+  && dotnet publish /opt/Kudu/Kudu.sln --configuration Release \
   && rm -f /tmp/kudu.conf \
   && cat /opt/Kudu/Web.config | \
   sed 's|  <location path="." inheritInChildApplications="false">|  <location path="~/../../../opt/Kudu" inheritInChildApplications="false">|' > /opt/Kudu/Web.config2 \
-  && mv /opt/Kudu/Web.config2 /opt/Kudu/Web.config \
-  && chmod 755 /opt/Kudu/bin/kudu.exe \
-  && chmod 755 /opt/Kudu/bin/node_modules/.bin/kuduscript \
-  && chmod 755 /opt/Kudu/bin/Scripts/starter.sh \
-  && mkdir -p /opt/Kudu/local \
-  && chmod 755 /opt/Kudu/local
+  && mv /opt/Kudu/Web.config2 /opt/Kudu/Kudu.Services.Web/bin/Release/netcoreapp2.1/Web.config \
+  
 
 # Install pm2 and pm2-logrotate
 RUN npm install pm2@latest -g \
