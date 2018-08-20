@@ -41,17 +41,19 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
   && wget -O /tmp/npm-5.4.2.zip https://github.com/npm/npm/archive/v5.4.2.zip \
   && wget -O /tmp/npm-5.6.0.zip https://github.com/npm/npm/archive/v5.6.0.zip \
   && wget -O /tmp/npm-6.0.1.zip https://github.com/npm/npm/archive/v6.0.1.zip \
-  && ln -s ../mods-available/xml2enc.load /etc/nginx/modules-enabled \
-  && a2enmod proxy \
-  && a2enmod proxy_http \
-  && a2enmod proxy_wstunnel \
-  && a2enmod rewrite \
-  && a2enmod proxy_ajp \
-  && a2enmod deflate \
-  && a2enmod headers \
-  && a2enmod proxy_balancer \
-  && a2enmod proxy_connect \
-  && a2enmod proxy_html 
+  && mkdir /etc/nginx \
+  && mkdir /etc/nginx/modules-enabled \
+  && ln -s ../mods-available/xml2enc.load /etc/nginx/modules-enabled 
+#  && a2enmod proxy \
+#  && a2enmod proxy_http \
+#  && a2enmod proxy_wstunnel \
+#  && a2enmod rewrite \
+#  && a2enmod proxy_ajp \
+#  && a2enmod deflate \
+#  && a2enmod headers \
+#  && a2enmod proxy_balancer \
+#  && a2enmod proxy_connect \
+#  && a2enmod proxy_html 
   
 # Install npm and node
 RUN mkdir -p /opt/npm/2.15.8/node_modules \
@@ -179,12 +181,10 @@ ENV PATH $PATH:/opt/nodejs/6.11.0/bin
 
 
 # Nginx Installation
-RUN apt-get install nginx
-  && ufw allow 'Nginx HTTP'
+RUN apt-get install -y nginx
 
 # Installing KuduLight
 RUN git clone https://github.com/sanchitmehta/KuduLight.git /opt/Kudu
-  &&
 
 # Ruby installations
 
@@ -332,11 +332,11 @@ RUN apt-get update \
   && pecl install sqlsrv pdo_sqlsrv \
   && echo extension=pdo_sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/30-pdo_sqlsrv.ini \
   && echo extension=sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/20-sqlsrv.ini \
-  && a2dismod mpm_event \
-  && a2enmod mpm_prefork \
-  && a2enmod php7.2 \
-  && echo "extension=pdo_sqlsrv.so" >> /etc/php/7.2/nginx/conf.d/30-pdo_sqlsrv.ini \
-  && echo "extension=sqlsrv.so" >> /etc/php/7.2/nginx/conf.d/20-sqlsrv.ini 
+#  && a2dismod mpm_event \
+#  && a2enmod mpm_prefork \
+#  && a2enmod php7.2 \
+#  && echo "extension=pdo_sqlsrv.so" >> /etc/php/7.2/nginx/conf.d/30-pdo_sqlsrv.ini \
+#  && echo "extension=sqlsrv.so" >> /etc/php/7.2/nginx/conf.d/20-sqlsrv.ini 
 
 
 # restart apache2  
@@ -467,9 +467,9 @@ RUN npm install -g kudusync \
   && cp /tmp/kudu.conf /etc/nginx/sites-available/kudu.conf \
   && dotnet publish /opt/Kudu/Kudu.sln --configuration Release \
   && rm -f /tmp/kudu.conf \
-  && cat /opt/Kudu/Web.config | \
-  sed 's|  <location path="." inheritInChildApplications="false">|  <location path="~/../../../opt/Kudu" inheritInChildApplications="false">|' > /opt/Kudu/Web.config2 \
-  && mv /opt/Kudu/Web.config2 /opt/Kudu/Kudu.Services.Web/bin/Release/netcoreapp2.1/Web.config \
+#  && cat /opt/Kudu/Web.config | \
+  && sed 's|  <location path="." inheritInChildApplications="false">|  <location path="~/../../../opt/Kudu" inheritInChildApplications="false">|' > /opt/Kudu/Web.config2 \
+  && mv /opt/Kudu/Web.config2 /opt/Kudu/Kudu.Services.Web/bin/Release/netcoreapp2.1/Web.config
   
 
 # Install pm2 and pm2-logrotate
@@ -509,6 +509,7 @@ COPY KuduStaticFiles/503.html /opt/Kudu/503.html
 COPY KuduStaticFiles/_Layout.cshtml /opt/Kudu/_Layout.cshtml
 COPY KuduStaticFiles/AppService.png /opt/Kudu/Content/Images/AppService.png
 COPY KuduStaticFiles/linux_favicon.ico /opt/Kudu/linux_favicon.ico
+COPY krestel-kudu.service /etc/systemd/system
 
 RUN chmod -R 777 /home \
   && rm -rf /tmp/*

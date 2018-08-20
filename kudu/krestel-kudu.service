@@ -1,0 +1,15 @@
+[Unit]
+Description= Kudu .Net Core Project running in Kudu Container
+
+[Service]
+WorkingDirectory=/var/opt/Kudu/Kudu.Services.Web/bin/Release/netcoreapp2.1
+ExecStart=/var/opt/Kudu/Kudu.Services.Web/bin/Release/netcoreapp2.1/Kudu.Services.Web.dll
+Restart=always
+RestartSec=10
+SyslogIdentifier=dotnetcore-kudu
+User=root
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+
+[Install]
+WantedBy=multi-user.target

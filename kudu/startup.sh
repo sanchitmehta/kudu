@@ -14,21 +14,11 @@ groupadd -g $GROUP_ID $GROUP_NAME
 useradd -u $USER_ID -g $GROUP_NAME $USER_NAME
 chown -R $USER_NAME:$GROUP_NAME /etc/apache2
 chown -R $USER_NAME:$GROUP_NAME /opt/Kudu
-touch /var/log/apache2/kudu-error.log
-touch /var/log/apache2/kudu-access.log
-mkdir -p /var/lock/apache2 /var/run/apache2
-chown -R $USER_NAME:$GROUP_NAME /var/log/apache2 /var/lock/apache2 /var/run/apache2
+touch /var/log/nginx/kudu-error.log
+touch /var/log/nginx/kudu-access.log
+mkdir -p /var/lock/nginx /var/run/nginx
+chown -R $USER_NAME:$GROUP_NAME /var/log/nginx /var/lock/nginx /var/run/nginx
 chown -R $USER_NAME:$GROUP_NAME /tmp
-sed -i -- "s/KuduSite/$SITE_NAME/g" /etc/apache2/sites-available/kudu.conf
-sed -i -- "s/user-placeholder/$USER_NAME/g" /etc/apache2/apache2.conf
-sed -i -- "s/group-placeholder/$GROUP_NAME/g" /etc/apache2/apache2.conf
-sed -i -- "s/80/8080/g" /etc/apache2/ports.conf
-mkdir -p /etc/mono/registry
-chmod uog+rw /etc/mono/registry
-chown -R $USER_NAME:$GROUP_NAME /etc/mono/registry
-cd /etc/apache2/sites-available
-a2dissite 000-default.conf
-a2ensite kudu.conf
 mkdir -p /home/LogFiles/webssh
 
 /bin/bash -c "pm2 start /opt/webssh/index.js -o /home/LogFiles/webssh/pm2.log -e /home/LogFiles/webssh/pm2.err &"
@@ -60,9 +50,10 @@ export SCM_BIN_PATH=/opt/Kudu/bin
 # sleep 1
 #done
 
+nginx -g 'daemon off;'
 
+#systemctl enable krestel-kudu.service
+#systemctl start krestel-kudu.service
+#systemctl status krestel-kudu.service
 #Running Kudu
-/bin/bash -c "dotnet /opt/Kudu/Kudu.Services.Web/bin/Release/netcoreapp2.1/publish/Kudu.Services.Web.dll &"
-
-#Run apache
-/usr/sbin/apache2ctl -D FOREGROUND
+/bin/bash "dotnet /opt/Kudu/Kudu.Services.Web/bin/Release/netcoreapp2.1/publish/Kudu.Services.Web.dll &"
