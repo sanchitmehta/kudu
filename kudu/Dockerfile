@@ -3,21 +3,12 @@ MAINTAINER Nazim Lala <naziml@microsoft.com>
 
 ENV DEBIAN_FRONTEND noninteractive
 
-COPY mod_mono.tar /tmp
-
 # Install dependencies
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
-  --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF \
-  && echo "deb http://download.mono-project.com/repo/debian jessie/snapshots/5.0.0.100/. main" > \
-  /etc/apt/sources.list.d/mono-xamarin.list \
-  && echo "deb http://ftp.debian.org/debian jessie-backports main" >> /etc/apt/sources.list \
+RUN echo "deb http://ftp.debian.org/debian jessie-backports main" >> /etc/apt/sources.list \
   && apt-get update \
   && apt-get install -y apt-utils --no-install-recommends \
   && apt-get install -y unzip --no-install-recommends \
   && apt-get install -y xz-utils --no-install-recommends \
-  && apt-get install -y mono-complete --no-install-recommends \
-  && apt-get install -y mono-apache-server4 --no-install-recommends \
-  && apt-get install -y libapache2-mod-mono --no-install-recommends \
   && apt-get install -y -t jessie-backports git --no-install-recommends \
   && apt-get install -y openssh-client --no-install-recommends \
   && apt-get install -y vim tree --no-install-recommends \
@@ -47,20 +38,7 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
   && wget -O /tmp/npm-5.0.3.zip https://github.com/npm/npm/archive/v5.0.3.zip \
   && wget -O /tmp/npm-5.4.2.zip https://github.com/npm/npm/archive/v5.4.2.zip \
   && wget -O /tmp/npm-5.6.0.zip https://github.com/npm/npm/archive/v5.6.0.zip \
-  && wget -O /tmp/npm-6.0.1.zip https://github.com/npm/npm/archive/v6.0.1.zip \
-  && ln -s ../mods-available/xml2enc.load /etc/apache2/mods-enabled \
-  && a2enmod proxy \
-  && a2enmod proxy_http \
-  && a2enmod proxy_wstunnel \
-  && a2enmod rewrite \
-  && a2enmod proxy_ajp \
-  && a2enmod deflate \
-  && a2enmod headers \
-  && a2enmod proxy_balancer \
-  && a2enmod proxy_connect \
-  && a2enmod proxy_html \
-  && tar -xf /tmp/mod_mono.tar \
-  && cp mod_mono.so.0.0.0 /usr/lib/apache2/modules/mod_mono.so.0.0.0
+  && wget -O /tmp/npm-6.0.1.zip https://github.com/npm/npm/archive/v6.0.1.zip
 
 # Install npm and node
 RUN mkdir -p /opt/npm/2.15.8/node_modules \
@@ -186,11 +164,6 @@ RUN mkdir -p /opt/npm/2.15.8/node_modules \
 
 ENV PATH $PATH:/opt/nodejs/6.11.0/bin
 
-# Upgrade mono
-RUN echo "deb http://download.mono-project.com/repo/debian beta/. main" | tee /etc/apt/sources.list.d/mono-xamarin-c7-ms.list \
-  && apt-get update \
-  && apt-get install -y libmono-system-net-http-webrequest4.0-cil --no-install-recommends
-
 # Ruby installations
 
 # Dependencies for various ruby and rubygem installations
@@ -314,9 +287,6 @@ RUN apt-get update \
   && apt-get update \
   && apt-get install -y --no-install-recommends php5-cli php5.6-zip php5.6-mbstring php5.6-xml php5-mysql php5-pgsql php5-curl php5-json php5-gd php5-gmp php5-imagick php5-imap php5-intl php5-ldap php5.6-mbstring php5-odbc php5-readline php5.6-SimpleXML php5.6-soap php5-sqlite php5-tidy php5.6-wddx php5-xmlrpc php5.6-xmlwriter php5-xsl
 
-# install apache2
-RUN apt-get install -y apache2 
-
 # mcrypt
 RUN apt-get install -y --no-install-recommends php5-mcrypt \
   && php5enmod mcrypt 
@@ -339,16 +309,8 @@ RUN apt-get update \
   && apt-get install -y php7.2-dev php-pear \
   && pecl install sqlsrv pdo_sqlsrv \
   && echo extension=pdo_sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/30-pdo_sqlsrv.ini \
-  && echo extension=sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/20-sqlsrv.ini \
-  && apt-get install -y libapache2-mod-php7.2 \
-  && a2dismod mpm_event \
-  && a2enmod mpm_prefork \
-  && a2enmod php7.2 \
-  && echo "extension=pdo_sqlsrv.so" >> /etc/php/7.2/apache2/conf.d/30-pdo_sqlsrv.ini \
-  && echo "extension=sqlsrv.so" >> /etc/php/7.2/apache2/conf.d/20-sqlsrv.ini 
+  && echo extension=sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/20-sqlsrv.ini 
 
-# restart apache2  
-RUN service apache2 restart
 
 # PHP Composer
 RUN php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');" \
@@ -471,18 +433,12 @@ RUN set -ex; \
 RUN pip3 install virtualenv
 
 # Install Kudu
-COPY kudu.conf /tmp
-COPY apache2.conf /tmp
 RUN npm install -g kudusync \
   && wget -O /tmp/Kudu.zip https://wawsinfraprodbay063.blob.core.windows.net/kudu/Kudu.75.10710.3480.zip \
-  && cp /tmp/kudu.conf /etc/apache2/sites-available/kudu.conf \
-  && cp /tmp/apache2.conf /etc/apache2/apache2.conf  \
   && unzip -q -o /tmp/Kudu.zip \
   && mkdir /opt/Kudu \
   && cp -rf ./75.10710.3480/* /opt/Kudu \
   && rm -f /tmp/Kudu.zip \
-  && rm -f /tmp/apache2.conf \
-  && rm -f /tmp/kudu.conf \
   && rm -rf ./75.10710.3480 \
   && cat /opt/Kudu/Web.config | \
   sed 's|  <location path="." inheritInChildApplications="false">|  <location path="~/../../../opt/Kudu" inheritInChildApplications="false">|' > /opt/Kudu/Web.config2 \
@@ -508,10 +464,6 @@ COPY startup.sh /
 RUN chmod 755 /startup.sh \
   && mkdir -p /home/LogFiles
 
-# Remove extraneous config mono config load that starts up
-# an unnecessary mono process
-RUN sed -i '$d' /etc/apache2/mods-enabled/mod_mono.conf
-
 # Install TunnelExtension
 COPY TunnelExtension.zip /tmp
 RUN mkdir /opt/tunnelext \
@@ -531,12 +483,46 @@ RUN mv /usr/bin/ssh /usr/bin/ssh.original \
 
 COPY hostingstart.html /home/site/wwwroot/hostingstart.html
 COPY KuduStaticFiles/503.html /opt/Kudu/503.html
-COPY KuduStaticFiles/_Layout.cshtml /opt/Kudu/_Layout.cshtml
-COPY KuduStaticFiles/AppService.png /opt/Kudu/Content/Images/AppService.png
-COPY KuduStaticFiles/linux_favicon.ico /opt/Kudu/linux_favicon.ico
+#COPY KuduStaticFiles/_Layout.cshtml /opt/Kudu/_Layout.cshtml
+#COPY KuduStaticFiles/AppService.png /opt/Kudu/Content/Images/AppService.png
+#COPY KuduStaticFiles/linux_favicon.ico /opt/Kudu/linux_favicon.ico
 
 RUN chmod -R 777 /home \
   && rm -rf /tmp/*
+
+#Instal Kudu
+COPY Program.cs /tmp
+RUN echo "Sanchit 1234567891011" \
+    && cd /opt/Kudu \
+    && find . -name "*.cshtml" -type f -delete \
+    && find . -name "*.dll" -type f -delete \
+    && git clone https://github.com/sanchitmehta/KuduLight.git \
+#    && cp /tmp/Program.cs KuduLight/Kudu.Services.Web \
+    && dotnet publish KuduLight/Kudu.sln --configuration Release \
+    && cp -r KuduLight/Kudu.Services.Web/bin/Release/netcoreapp2.1/publish/* /opt/Kudu/ \
+    && mkdir /opt/Kudu/KuduConsole \
+    && dotnet publish KuduLight/Kudu.Console --configuration Release \
+    && cp -r KuduLight/Kudu.Console/bin/Release/netcoreapp2.1/publish/* /opt/Kudu/KuduConsole/ \
+    && cd /opt/Kudu/KuduConsole \
+    && npm install kuduscript \
+    && cp -r ../node_modules . \
+    && chmod 777 -R Scripts 
+#    && rm -r KuduLight
+
+RUN echo $(date) doing groupadd \
+    && groupadd -g "1002" "kudu_group" \
+    && echo $(date) doing useradd \
+    && useradd -u "1001" -g "kudu_group" "kudu_user" \
+    && echo $(date) doing kudu chown \
+    && chown -R "kudu_user":"kudu_group" /opt/Kudu \
+    && echo $(date) doing tmp chown \
+    && chown -R "kudu_user":"kudu_group" /tmp \
+    && chmod 777 /opt/Kudu \
+    && echo $(date) Running webssh \
+    && /bin/bash -c "node /opt/webssh/index.js &" \
+    && echo $(date) Starting Tunnel Server \
+    && chmod 777 /opt/tunnelext/tunnelwatcher.sh \
+    && /bin/bash -c "/opt/tunnelext/tunnelwatcher.sh dotnet /opt/tunnelext/DebugExtension.dll &"
 
 EXPOSE 8181
 
