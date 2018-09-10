@@ -175,8 +175,7 @@ RUN echo "deb http://ftp.debian.org/debian jessie-backports main" >> /etc/apt/so
   && git clone https://github.com/rbenv/rbenv.git /usr/local/.rbenv \
   && chmod -R 777 /usr/local/.rbenv
 
-ENV PATH $PATH:/opt/nodejs/6.11.0/bin 
-ENV RBENV_ROOT "/usr/local/.rbenv" 
+ENV PATH="$PATH:/opt/nodejs/6.11.0/bin" RBENV_ROOT="/usr/local/.rbenv" 
 ENV PATH "$RBENV_ROOT/bin:/usr/local:$PATH"
 
 RUN git clone https://github.com/rbenv/ruby-build.git /usr/local/.rbenv/plugins/ruby-build \
@@ -184,8 +183,7 @@ RUN git clone https://github.com/rbenv/ruby-build.git /usr/local/.rbenv/plugins/
     && /usr/local/.rbenv/plugins/ruby-build/install.sh
 
 # Install ruby 2.3.1
-ENV RUBY_CONFIGURE_OPTS=--disable-install-doc
-ENV RUBY_CFLAGS=-O3
+ENV RUBY_CONFIGURE_OPTS="--disable-install-doc" RUBY_CFLAGS="-O3"
 
 RUN eval "$(rbenv init -)" \ 
 #apt-get install -y linux-source \
@@ -321,13 +319,11 @@ RUN mkdir /var/nuget \
   && php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet \
   && rm -f /tmp/composer-setup.php
 
-ENV PHP_VERSION=7.2
-ENV COMPOSER_VENDOR_DIR=/home/site/wwwroot/vendor
+ENV PHP_VERSION="7.2" COMPOSER_VENDOR_DIR="/home/site/wwwroot/vendor"
 
 # Golang and musl for cross compiling for alpine.
 ENV GOLANG_VERSION=1.10
-ENV GOLANG_DOWNLOAD_URL=https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
-ENV GOLANG_DOWNLOAD_SHA=b5a64335f1490277b585832d1f6c7f8c6c11206cba5cd3f771dcb87b98ad1a33
+ENV GOLANG_DOWNLOAD_URL="https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz" GOLANG_DOWNLOAD_SHA="b5a64335f1490277b585832d1f6c7f8c6c11206cba5cd3f771dcb87b98ad1a33"
 
 RUN curl -SL $GOLANG_DOWNLOAD_URL --output golang.tar.gz \
   && echo "$GOLANG_DOWNLOAD_SHA golang.tar.gz" | sha256sum -c - \
@@ -339,8 +335,7 @@ ENV PATH /usr/local/go/bin:$PATH
 
 # Download Dep executable
 ENV DEP_VERSION=0.4.1
-ENV DEP_DOWNLOAD_URL=https://github.com/golang/dep/releases/download/v$DEP_VERSION/dep-linux-amd64
-ENV DEP_DOWNLOAD_SHA=31144e465e52ffbc0035248a10ddea61a09bf28b00784fd3fdd9882c8cbb2315
+ENV DEP_DOWNLOAD_URL="https://github.com/golang/dep/releases/download/v$DEP_VERSION/dep-linux-amd64" DEP_DOWNLOAD_SHA="31144e465e52ffbc0035248a10ddea61a09bf28b00784fd3fdd9882c8cbb2315"
 RUN curl -fL -o /usr/local/go/bin/dep $DEP_DOWNLOAD_URL \
   && echo "$DEP_DOWNLOAD_SHA /usr/local/go/bin/dep" | sha256sum -c - \
   && chmod +x /usr/local/go/bin/dep
@@ -360,8 +355,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
                 libssl-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
-ENV GPG_KEY 0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D
-ENV PYTHON_VERSION 3.7.0
+ENV GPG_KEY="0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D" PYTHON_VERSION="3.7.0"
 
 RUN set -ex \
 	&& buildDeps=' \
