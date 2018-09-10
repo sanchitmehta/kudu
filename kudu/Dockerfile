@@ -449,6 +449,7 @@ RUN npm install -g kudusync \
   && mkdir -p /opt/Kudu/local \
   && chmod 755 /opt/Kudu/local
 
+RUN echo "1234"
 # Install pm2 and pm2-logrotate
 RUN npm install pm2@latest -g \
   && pm2 install pm2-logrotate \
@@ -491,7 +492,6 @@ RUN chmod -R 777 /home \
   && rm -rf /tmp/*
 
 #Instal Kudu
-COPY Program.cs /tmp
 RUN echo "Sanchit 1234567891011" \
     && cd /opt/Kudu \
     && find . -name "*.cshtml" -type f -delete \
@@ -521,7 +521,7 @@ RUN echo $(date) doing groupadd \
     && echo $(date) Running webssh \
     && /bin/bash -c "node /opt/webssh/index.js &" \
     && echo $(date) Starting Tunnel Server \
-    && chmod 777 /opt/tunnelext/tunnelwatcher.sh \
+#    && chmod 777 /opt/tunnelext/tunnelwatcher.sh \
     && /bin/bash -c "/opt/tunnelext/tunnelwatcher.sh dotnet /opt/tunnelext/DebugExtension.dll &"
 
 EXPOSE 8181

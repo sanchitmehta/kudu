@@ -28,11 +28,11 @@ echo $(date) doing tmp chown
 #chown -R $USER_NAME:$GROUP_NAME /tmp
 
 echo $(date) Running webssh
-#/bin/bash -c "node /opt/webssh/index.js &"
+/bin/bash -c "node /opt/webssh/index.js &"
 
 echo $(date) Starting Tunnel Server
 #chmod 777 /opt/tunnelext/tunnelwatcher.sh
-#/bin/bash -c "/opt/tunnelext/tunnelwatcher.sh dotnet /opt/tunnelext/DebugExtension.dll &"
+/bin/bash -c "/opt/tunnelext/tunnelwatcher.sh dotnet /opt/tunnelext/DebugExtension.dll &"
 
 
 echo $(date) exporting vars
