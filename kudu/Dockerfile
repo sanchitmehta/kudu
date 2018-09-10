@@ -42,8 +42,6 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
   && wget -O /tmp/npm-5.6.0.zip https://github.com/npm/npm/archive/v5.6.0.zip \
   && wget -O /tmp/npm-6.0.1.zip https://github.com/npm/npm/archive/v6.0.1.zip \
   && mkdir /etc/nginx \
-  && mkdir /etc/nginx/modules-enabled \
-  && ln -s ../mods-available/xml2enc.load /etc/nginx/modules-enabled 
 #  && a2enmod proxy \
 #  && a2enmod proxy_http \
 #  && a2enmod proxy_wstunnel \
@@ -54,9 +52,8 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
 #  && a2enmod proxy_balancer \
 #  && a2enmod proxy_connect \
 #  && a2enmod proxy_html 
-  
 # Install npm and node
-RUN mkdir -p /opt/npm/2.15.8/node_modules \
+  && mkdir -p /opt/npm/2.15.8/node_modules \
   && unzip -q /tmp/npm-2.15.8.zip -d /opt/npm/2.15.8/node_modules \
   && mv /opt/npm/2.15.8/node_modules/npm-2.15.8 /opt/npm/2.15.8/node_modules/npm \
   && ln -s /opt/npm/2.15.8/node_modules/npm/bin/npm /opt/npm/2.15.8/npm \
@@ -175,16 +172,11 @@ RUN mkdir -p /opt/npm/2.15.8/node_modules \
   && rm -rf /usr/bin/npm \
   && ln -s /opt/npm/3.10.10/node_modules/npm/bin/npm /usr/bin/npm \
   && ln -s /opt/npm/3.10.10/node_modules/npm/bin/npm-cli.js /usr/bin/npm-cli.js \
-  && ln -s /opt/npm/3.10.10/node_modules /usr/bin/node_modules
+  && ln -s /opt/npm/3.10.10/node_modules /usr/bin/node_modules \
+  # Nginx Installation
+  && apt-get install -y nginx
 
 ENV PATH $PATH:/opt/nodejs/6.11.0/bin
-
-
-# Nginx Installation
-RUN apt-get install -y nginx
-
-# Installing KuduLight
-RUN git clone https://github.com/sanchitmehta/KuduLight.git /opt/Kudu
 
 # Ruby installations
 
@@ -250,7 +242,7 @@ RUN apt-get update \
 
 # Install .NET Core SDK
 ENV DOTNET_SDK_VERSION 2.1.300
-ENV DOTNET_SDK_DOWNLOAD_URL https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz
+ENV DOTNET_SDK_DOWNLOAD_URL https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz 
 ENV DOTNET_SDK_DOWNLOAD_SHA 80a6bfb1db5862804e90f819c1adeebe3d624eae0d6147e5d6694333f0458afd7d34ce73623964752971495a310ff7fcc266030ce5aef82d5de7293d94d13770
 
 RUN curl -SL $DOTNET_SDK_DOWNLOAD_URL --output dotnet.tar.gz \
@@ -261,7 +253,7 @@ RUN curl -SL $DOTNET_SDK_DOWNLOAD_URL --output dotnet.tar.gz \
   && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
 
 # Moving the package cache to the container image will require user packages to be repopulated
-# for each new build done in a new container instance, but it's *much* faster than
+# for each new build done in a new container instance, but it's much faster than
 # using a location on the user's site volume and does not require them to use their storage, and
 # lets us warm the caches with standard packages
 ENV NUGET_PACKAGES /var/nuget
@@ -299,39 +291,40 @@ RUN mkdir /var/nuget \
   && cd .. \
   && rm -rf warmup \
   && rm -rf /tmp/NuGetScratch \
-  && find /var/nuget -type d -exec chmod 777 {} \;
+  && find /var/nuget -type d -exec chmod 777 {} \; \
 
 # PHP5.6
-RUN apt-get update \
+  && apt-get update \
   && apt-get install -y apt-transport-https lsb-release ca-certificates \
   && wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
   && sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list' \ 
   && apt-get update \
-  && apt-get install -y --no-install-recommends php5-cli php5.6-zip php5.6-mbstring php5.6-xml php5-mysql php5-pgsql php5-curl php5-json php5-gd php5-gmp php5-imagick php5-imap php5-intl php5-ldap php5.6-mbstring php5-odbc php5-readline php5.6-SimpleXML php5.6-soap php5-sqlite php5-tidy php5.6-wddx php5-xmlrpc php5.6-xmlwriter php5-xsl
+  && apt-get install -y --no-install-recommends php5-cli php5.6-zip php5.6-mbstring php5.6-xml php5-mysql php5-pgsql php5-curl php5-json php5-gd php5-gmp php5-imagick php5-imap php5-intl php5-ldap php5.6-mbstring php5-odbc php5-readline php5.6-SimpleXML php5.6-soap php5-sqlite php5-tidy php5.6-wddx php5-xmlrpc php5.6-xmlwriter php5-xsl \
 
 # mcrypt
-RUN apt-get install -y --no-install-recommends php5-mcrypt \
-  && php5enmod mcrypt 
+  && apt-get install -y --no-install-recommends php5-mcrypt \
+  && php5enmod mcrypt  \
 
 # PHP7
-RUN echo "deb http://deb.debian.org/debian stretch main" > /etc/apt/sources.list.d/stretch.list \
+  && echo "deb http://deb.debian.org/debian stretch main" > /etc/apt/sources.list.d/stretch.list \
   && apt-get update \
   && apt-get install -y --no-install-recommends --allow-unauthenticated php7.0-cli php7.0-zip php7.0-mbstring php7.0-xml php7.0-mysql php7.0-pgsql php7.0-curl php7.0-json \
-  && rm -f /etc/apt/sources.list.d/stretch.list
+  && rm -f /etc/apt/sources.list.d/stretch.list \
 
 # PHP7.2
-RUN apt-get install -y apt-transport-https lsb-release ca-certificates \
+  && apt-get install -y apt-transport-https lsb-release ca-certificates \
   && wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
   && sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list' \ 
   && apt-get update \
-  && apt-get install -y php7.2 php7.2-common php7.2-cli php7.2-fpm php7.2-mysql php7.2-pgsql php7.2-curl php7.2-json php7.2-bcmath php7.2-dom php7.2-gd php7.2-gmp php7.2-imagick php7.2-imap php7.2-intl php7.2-ldap php7.2-mbstring php7.2-odbc php7.2-SimpleXML php7.2-soap php7.2-sqlite3 php7.2-tidy php7.2-wddx php7.2-xmlrpc php7.2-xmlwriter php7.2-xsl php7.2-zip
+  && apt-get install -y php7.2 php7.2-common php7.2-cli php7.2-fpm php7.2-mysql php7.2-pgsql php7.2-curl php7.2-json php7.2-bcmath php7.2-dom php7.2-gd php7.2-gmp php7.2-imagick php7.2-imap php7.2-intl php7.2-ldap php7.2-mbstring php7.2-odbc php7.2-SimpleXML php7.2-soap php7.2-sqlite3 php7.2-tidy php7.2-wddx php7.2-xmlrpc php7.2-xmlwriter php7.2-xsl php7.2-zip \
 
 # Microsoft Drivers for PHP for SQL Server
-RUN apt-get update \
+  && apt-get update \
   && apt-get install -y php7.2-dev php-pear \
   && pecl install sqlsrv pdo_sqlsrv \
-  && echo extension=pdo_sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/30-pdo_sqlsrv.ini \
-  && echo extension=sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/20-sqlsrv.ini \
+#check this later
+#  && echo extension=pdo_sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.:\s||"`/30-pdo_sqlsrv.ini \
+#  && echo extension=sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.:\s||"`/20-sqlsrv.ini \
 #  && a2dismod mpm_event \
 #  && a2enmod mpm_prefork \
 #  && a2enmod php7.2 \
@@ -340,20 +333,20 @@ RUN apt-get update \
 
 
 # restart apache2  
-RUN service nginx restart  
+#RUN service nginx restart  
   
 # PHP Composer
-RUN php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');" \
+  && php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');" \
   && php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet \
-  && rm -f /tmp/composer-setup.php
+  && rm -f /tmp/composer-setup.php \
+  && service nginx restart
 
 ENV PHP_VERSION=7.2
 ENV COMPOSER_VENDOR_DIR=/home/site/wwwroot/vendor
-
-# Golang and musl for cross compiling for alpine.
 ENV GOLANG_VERSION=1.10
 ENV GOLANG_DOWNLOAD_URL=https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
 ENV GOLANG_DOWNLOAD_SHA=b5a64335f1490277b585832d1f6c7f8c6c11206cba5cd3f771dcb87b98ad1a33
+
 
 RUN curl -SL $GOLANG_DOWNLOAD_URL --output golang.tar.gz \
   && echo "$GOLANG_DOWNLOAD_SHA golang.tar.gz" | sha256sum -c - \
@@ -376,7 +369,7 @@ RUN curl -fL -o /usr/local/go/bin/dep $DEP_DOWNLOAD_URL \
 ENV PATH /usr/local/bin:$PATH
 
 # http://bugs.python.org/issue19846
-# > At the moment, setting "LANG=C" on a Linux system *fundamentally breaks Python 3*, and that's not OK.
+# > At the moment, setting "LANG=C" on a Linux system fundamentally breaks Python 3, and that's not OK.
 ENV LANG C.UTF-8
 
 # runtime dependencies
@@ -425,7 +418,7 @@ RUN set -ex \
 		\( \
 			\( -type d -a \( -name test -o -name tests \) \) \
 			-o \
-			\( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
+			\( -type f -a \( -name '.pyc' -o -name '.pyo' \) \) \
 		\) -exec rm -rf '{}' + \
 	&& rm -rf /usr/src/python
 
@@ -454,7 +447,7 @@ RUN set -ex; \
 		\( \
 			\( -type d -a \( -name test -o -name tests \) \) \
 			-o \
-			\( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
+			\( -type f -a \( -name '.pyc' -o -name '.pyo' \) \) \
 		\) -exec rm -rf '{}' +; \
 	rm -f get-pip.py
 
@@ -462,56 +455,80 @@ RUN set -ex; \
 RUN pip3 install virtualenv
 
 # Install Kudu
-COPY kudu.conf /tmp
-RUN npm install -g kudusync \
-  && cp /tmp/kudu.conf /etc/nginx/sites-available/kudu.conf \
-  && dotnet publish /opt/Kudu/Kudu.sln --configuration Release \
-  && rm -f /tmp/kudu.conf \
-#  && cat /opt/Kudu/Web.config | \
-  && sed 's|  <location path="." inheritInChildApplications="false">|  <location path="~/../../../opt/Kudu" inheritInChildApplications="false">|' > /opt/Kudu/Web.config2 \
-  && mv /opt/Kudu/Web.config2 /opt/Kudu/Kudu.Services.Web/bin/Release/netcoreapp2.1/Web.config
-  
-
-# Install pm2 and pm2-logrotate
-RUN npm install pm2@latest -g \
-  && pm2 install pm2-logrotate \
-  && pm2 set pm2-logrotate:retain 7
-
-# Install LogAnalyzer
-COPY LogAnalyzer.zip /tmp
-RUN mkdir /opt/LogAnalyzer \
-  && unzip /tmp/LogAnalyzer.zip -d /opt/LogAnalyzer \
-  && rm -f /tmp/LogAnalyzer.zip
-
+COPY kudu.conf LogAnalyzer.zip TunnelExtension.zip webssh.zip ssh /tmp/
 COPY startup.sh /
-RUN chmod 755 /startup.sh \
-  && mkdir -p /home/LogFiles
+#COPY hostingstart.html /home/site/wwwroot/hostingstart.html
+COPY KuduStaticFiles/503.html /opt/Kudu/503.html
+#COPY KuduStaticFiles/AppService.png /opt/Kudu/Content/Images/AppService.png
+#COPY KuduStaticFiles/linux_favicon.ico /opt/Kudu/linux_favicon.ico
 
-# Install TunnelExtension
-COPY TunnelExtension.zip /tmp
-RUN mkdir /opt/tunnelext \
-  && unzip /tmp/TunnelExtension.zip -d /opt/tunnelext
 
-# Install webssh
-COPY webssh.zip /tmp
-RUN mkdir /opt/webssh \
-  && unzip /tmp/webssh.zip -d /opt/webssh
 
-# Replace ssh with wrapper script for CIFS mount permissions workaround
-COPY ssh /tmp
-RUN mv /usr/bin/ssh /usr/bin/ssh.original \
+RUN cd /opt/Kudu \
+    && wget -O /tmp/Kudu.zip https://wawsinfraprodbay063.blob.core.windows.net/kudu/Kudu.75.10710.3480.zip \
+    && unzip -q -o /tmp/Kudu.zip \
+    #workaround for locla run - remove later
+    && mkdir -p /home/site \
+    && mkdir -p /home/site/wwwroot \
+    && cp -rf ./75.10710.3480/* /opt/Kudu \
+    && rm -f /tmp/Kudu.zip \
+    && rm -rf ./75.10710.3480 \
+    && git clone https://github.com/sanchitmehta/KuduLight.git \
+    && cp /tmp/kudu.conf /etc/nginx/sites-enabled/kudu.conf \
+    && ln -s /etc/nginx/sites-enabled/kudu.conf /etc/nginx/sites-available/ \
+    && service nginx reload \
+    && dotnet publish KuduLight/Kudu.sln --configuration Release \
+    && cp -r KuduLight/Kudu.Services.Web/bin/Release/netcoreapp2.1/publish/* /opt/Kudu/ \
+    && mkdir /opt/Kudu/KuduConsole \
+    && dotnet publish KuduLight/Kudu.Console --configuration Release \
+    && cp -r KuduLight/Kudu.Console/bin/Release/netcoreapp2.1/publish/* /opt/Kudu/KuduConsole/ \
+    && cd /opt/Kudu/KuduConsole \
+    && npm install kuduscript \
+    && cp -r ../node_modules . \
+    && chmod 777 -R Scripts \
+#    && rm -r KuduLight
+    && echo $(date) doing groupadd \
+    && groupadd -g "1002" "kudu_group" \
+    && echo $(date) doing useradd \
+    && useradd -u "1001" -g "kudu_group" "kudu_user" \
+    && echo $(date) doing kudu chown \
+    && chown -R "kudu_user":"kudu_group" /opt/Kudu \
+    && echo $(date) doing tmp chown \
+    && chown -R "kudu_user":"kudu_group" /tmp \
+    && chmod 777 /opt/Kudu \
+    && echo $(date) Running webssh \
+#    && chmod 777 /opt/tunnelext/tunnelwatcher.sh \
+    && rm -f /tmp/kudu.conf \
+    && mkdir /usr/share/nginx/logs \
+#  && cat /opt/Kudu/Web.config | \
+  # Install pm2 and pm2-logrotate
+    && cd /tmp \
+    && npm install pm2@latest -g \
+    && pm2 install pm2-logrotate \
+    && pm2 set pm2-logrotate:retain 7 \
+
+  # Install LogAnalyzer
+  && mkdir /opt/LogAnalyzer \
+  && unzip /tmp/LogAnalyzer.zip -d /opt/LogAnalyzer \
+  && rm -f /tmp/LogAnalyzer.zip \
+  && chmod 755 /startup.sh \
+  && mkdir -p /home/LogFiles \
+
+  # Install TunnelExtension
+  && mkdir /opt/tunnelext \
+  && unzip /tmp/TunnelExtension.zip -d /opt/tunnelext \
+  && chmod 777 /opt/tunnelext/tunnelwatcher.sh \
+
+  # Install webssh
+  && mkdir /opt/webssh \
+  && unzip /tmp/webssh.zip -d /opt/webssh \
+
+  # Replace ssh with wrapper script for CIFS mount permissions workaround
+  && mv /usr/bin/ssh /usr/bin/ssh.original \
   && mv /tmp/ssh /usr/bin/ssh \
   && chown root:root /usr/bin/ssh \
-  && chmod 755 /usr/bin/ssh
-
-COPY hostingstart.html /home/site/wwwroot/hostingstart.html
-COPY KuduStaticFiles/503.html /opt/Kudu/503.html
-COPY KuduStaticFiles/_Layout.cshtml /opt/Kudu/_Layout.cshtml
-COPY KuduStaticFiles/AppService.png /opt/Kudu/Content/Images/AppService.png
-COPY KuduStaticFiles/linux_favicon.ico /opt/Kudu/linux_favicon.ico
-COPY krestel-kudu.service /etc/systemd/system
-
-RUN chmod -R 777 /home \
+  && chmod 755 /usr/bin/ssh \
+  && chmod -R 777 /home \
   && rm -rf /tmp/*
 
 EXPOSE 8181
