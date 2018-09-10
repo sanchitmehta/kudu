@@ -38,10 +38,10 @@ RUN echo "deb http://ftp.debian.org/debian jessie-backports main" >> /etc/apt/so
   && wget -O /tmp/npm-5.0.3.zip https://github.com/npm/npm/archive/v5.0.3.zip \
   && wget -O /tmp/npm-5.4.2.zip https://github.com/npm/npm/archive/v5.4.2.zip \
   && wget -O /tmp/npm-5.6.0.zip https://github.com/npm/npm/archive/v5.6.0.zip \
-  && wget -O /tmp/npm-6.0.1.zip https://github.com/npm/npm/archive/v6.0.1.zip
+  && wget -O /tmp/npm-6.0.1.zip https://github.com/npm/npm/archive/v6.0.1.zip \
 
 # Install npm and node
-RUN mkdir -p /opt/npm/2.15.8/node_modules \
+  && mkdir -p /opt/npm/2.15.8/node_modules \
   && unzip -q /tmp/npm-2.15.8.zip -d /opt/npm/2.15.8/node_modules \
   && mv /opt/npm/2.15.8/node_modules/npm-2.15.8 /opt/npm/2.15.8/node_modules/npm \
   && ln -s /opt/npm/2.15.8/node_modules/npm/bin/npm /opt/npm/2.15.8/npm \
@@ -160,37 +160,42 @@ RUN mkdir -p /opt/npm/2.15.8/node_modules \
   && rm -rf /usr/bin/npm \
   && ln -s /opt/npm/3.10.10/node_modules/npm/bin/npm /usr/bin/npm \
   && ln -s /opt/npm/3.10.10/node_modules/npm/bin/npm-cli.js /usr/bin/npm-cli.js \
-  && ln -s /opt/npm/3.10.10/node_modules /usr/bin/node_modules
-
-ENV PATH $PATH:/opt/nodejs/6.11.0/bin
+  && ln -s /opt/npm/3.10.10/node_modules /usr/bin/node_modules \
+  && export PATH=$PATH:/opt/nodejs/6.11.0/bin \
 
 # Ruby installations
 
 # Dependencies for various ruby and rubygem installations
-RUN apt-get install -y libreadline-dev bzip2 build-essential libssl-dev zlib1g-dev libpq-dev libsqlite3-dev \
+  && apt-get install -y libreadline-dev bzip2 build-essential libssl-dev zlib1g-dev libpq-dev libsqlite3-dev \
   curl patch gawk g++ gcc make libc6-dev patch libreadline6-dev libyaml-dev sqlite3 autoconf \
   libgdbm-dev libncurses5-dev automake libtool bison pkg-config libffi-dev bison libxslt-dev \
-  libxml2-dev libmysqlclient-dev --no-install-recommends
+  libxml2-dev default-libmysqlclient-dev --no-install-recommends \
 
 # rbenv
-RUN git clone https://github.com/rbenv/rbenv.git /usr/local/.rbenv
-RUN chmod -R 777 /usr/local/.rbenv
+  && git clone https://github.com/rbenv/rbenv.git /usr/local/.rbenv \
+  && chmod -R 777 /usr/local/.rbenv
 
-ENV RBENV_ROOT="/usr/local/.rbenv"
+ENV PATH $PATH:/opt/nodejs/6.11.0/bin 
+ENV RBENV_ROOT "/usr/local/.rbenv" 
+ENV PATH "$RBENV_ROOT/bin:/usr/local:$PATH"
 
-ENV PATH="$RBENV_ROOT/bin:/usr/local:$PATH"
-
-RUN git clone https://github.com/rbenv/ruby-build.git /usr/local/.rbenv/plugins/ruby-build
-RUN chmod -R 777 /usr/local/.rbenv/plugins/ruby-build
-
-RUN /usr/local/.rbenv/plugins/ruby-build/install.sh
+RUN git clone https://github.com/rbenv/ruby-build.git /usr/local/.rbenv/plugins/ruby-build \
+    && chmod -R 777 /usr/local/.rbenv/plugins/ruby-build \
+    && /usr/local/.rbenv/plugins/ruby-build/install.sh
 
 # Install ruby 2.3.1
 ENV RUBY_CONFIGURE_OPTS=--disable-install-doc
-
 ENV RUBY_CFLAGS=-O3
 
-RUN eval "$(rbenv init -)" \
+RUN eval "$(rbenv init -)" \ 
+#apt-get install -y linux-source \
+#  && apt-get install -y eval \
+#  && apt-get install -y autoconf bison build-essential libssl-dev libyaml-dev libreadline6-dev zlib1g-dev libncurses5-dev libffi-dev libgdbm3 libgdbm-dev \
+#  && ln -sf bash /bin/sh \
+#  && apt-get install libssl-dev \
+#  curl -fsSL https://github.com/ruby/ruby/commit/1e7a929c1d44d7a368fbe379211183ac6c972920.patch | \
+#  rbenv install --patch 1.9.3-p484 \
+#  eval "$(rbenv init -)" \
   && export WEBSITES_LATEST_NODE_VERSION="2.3.3" \
   && rbenv install $WEBSITES_LATEST_NODE_VERSION \
   && rbenv rehash \
@@ -198,9 +203,8 @@ RUN eval "$(rbenv init -)" \
   && ls /usr/local -a \
   && gem install bundler --version "=1.13.6"\
   && chmod -R 777 /usr/local/.rbenv/versions \
-  && chmod -R 777 /usr/local/.rbenv/version
-
-RUN eval "$(rbenv init -)" \
+  && chmod -R 777 /usr/local/.rbenv/version \
+  && eval "$(rbenv init -)" \
   && rbenv global $WEBSITES_LATEST_NODE_VERSION \
   && bundle config --global build.nokogiri -- --use-system-libraries
 
@@ -208,10 +212,10 @@ RUN eval "$(rbenv init -)" \
 ENV NOKOGIRI_USE_SYSTEM_LIBRARIES=true
 
 # SQL Server gem support
-RUN apt-get install -y unixodbc-dev freetds-dev freetds-bin
+RUN apt-get install -y unixodbc-dev freetds-dev freetds-bin \
 
 # Install .NET Core
-RUN apt-get update \
+  && apt-get update \
   && apt-get install -y --no-install-recommends \
   libc6 \
   libcurl3 \
@@ -227,9 +231,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Install .NET Core SDK
-ENV DOTNET_SDK_VERSION 2.1.300
-ENV DOTNET_SDK_DOWNLOAD_URL https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz
-ENV DOTNET_SDK_DOWNLOAD_SHA 80a6bfb1db5862804e90f819c1adeebe3d624eae0d6147e5d6694333f0458afd7d34ce73623964752971495a310ff7fcc266030ce5aef82d5de7293d94d13770
+ENV DOTNET_SDK_VERSION="2.1.300" 
+ENV DOTNET_SDK_DOWNLOAD_URL="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz" DOTNET_SDK_DOWNLOAD_SHA="80a6bfb1db5862804e90f819c1adeebe3d624eae0d6147e5d6694333f0458afd7d34ce73623964752971495a310ff7fcc266030ce5aef82d5de7293d94d13770"
 
 RUN curl -SL $DOTNET_SDK_DOWNLOAD_URL --output dotnet.tar.gz \
   && echo "$DOTNET_SDK_DOWNLOAD_SHA dotnet.tar.gz" | sha512sum -c - \
@@ -277,43 +280,44 @@ RUN mkdir /var/nuget \
   && cd .. \
   && rm -rf warmup \
   && rm -rf /tmp/NuGetScratch \
-  && find /var/nuget -type d -exec chmod 777 {} \;
+  && find /var/nuget -type d -exec chmod 777 {} \; \
 
 # PHP5.6
-RUN apt-get update \
+  && apt-get update \
   && apt-get install -y apt-transport-https lsb-release ca-certificates \
   && wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
   && sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list' \ 
   && apt-get update \
-  && apt-get install -y --no-install-recommends php5-cli php5.6-zip php5.6-mbstring php5.6-xml php5-mysql php5-pgsql php5-curl php5-json php5-gd php5-gmp php5-imagick php5-imap php5-intl php5-ldap php5.6-mbstring php5-odbc php5-readline php5.6-SimpleXML php5.6-soap php5-sqlite php5-tidy php5.6-wddx php5-xmlrpc php5.6-xmlwriter php5-xsl
+  && apt-get install -y --no-install-recommends php5-cli php5.6-zip php5.6-mbstring php5.6-xml php5-mysql php5-pgsql php5-curl php5-json php5-gd php5-gmp php5-imagick php5-imap php5-intl php5-ldap php5.6-mbstring php5-odbc php5-readline php5.6-SimpleXML php5.6-soap php5-sqlite php5-tidy php5.6-wddx php5-xmlrpc php5.6-xmlwriter php5-xsl \
 
 # mcrypt
-RUN apt-get install -y --no-install-recommends php5-mcrypt \
-  && php5enmod mcrypt 
+  && apt-get install -y --no-install-recommends php5-mcrypt \
+  && php5enmod mcrypt \
 
 # PHP7
-RUN echo "deb http://deb.debian.org/debian stretch main" > /etc/apt/sources.list.d/stretch.list \
+  && echo "deb http://deb.debian.org/debian stretch main" > /etc/apt/sources.list.d/stretch.list \
   && apt-get update \
   && apt-get install -y --no-install-recommends --allow-unauthenticated php7.0-cli php7.0-zip php7.0-mbstring php7.0-xml php7.0-mysql php7.0-pgsql php7.0-curl php7.0-json \
-  && rm -f /etc/apt/sources.list.d/stretch.list
+  && rm -f /etc/apt/sources.list.d/stretch.list \
 
 # PHP7.2
-RUN apt-get install -y apt-transport-https lsb-release ca-certificates \
+  && apt-get install -y apt-transport-https lsb-release ca-certificates \
   && wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
   && sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list' \ 
   && apt-get update \
-  && apt-get install -y php7.2 php7.2-common php7.2-cli php7.2-fpm php7.2-mysql php7.2-pgsql php7.2-curl php7.2-json php7.2-bcmath php7.2-dom php7.2-gd php7.2-gmp php7.2-imagick php7.2-imap php7.2-intl php7.2-ldap php7.2-mbstring php7.2-odbc php7.2-SimpleXML php7.2-soap php7.2-sqlite3 php7.2-tidy php7.2-wddx php7.2-xmlrpc php7.2-xmlwriter php7.2-xsl php7.2-zip
+  && apt-get install -y php7.2 php7.2-common php7.2-cli php7.2-fpm php7.2-mysql php7.2-pgsql php7.2-curl php7.2-json php7.2-bcmath php7.2-dom php7.2-gd php7.2-gmp php7.2-imagick php7.2-imap php7.2-intl php7.2-ldap php7.2-mbstring php7.2-odbc php7.2-SimpleXML php7.2-soap php7.2-sqlite3 php7.2-tidy php7.2-wddx php7.2-xmlrpc php7.2-xmlwriter php7.2-xsl php7.2-zip \
 
 # Microsoft Drivers for PHP for SQL Server
-RUN apt-get update \
+  && apt-get update \
   && apt-get install -y php7.2-dev php-pear \
-  && pecl install sqlsrv pdo_sqlsrv \
-  && echo extension=pdo_sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/30-pdo_sqlsrv.ini \
-  && echo extension=sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/20-sqlsrv.ini 
+#  && pecl install sqlsrv pdo_sqlsrv 
+# CORE TODO Check This
+#  && echo extension=pdo_sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/30-pdo_sqlsrv.ini \
+#  && echo extension=sqlsrv.so >> `php --ini | grep "Scan for additional .ini files" | sed -e "s|.*:\s*||"`/20-sqlsrv.ini 
 
 
 # PHP Composer
-RUN php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');" \
+  && php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');" \
   && php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet \
   && rm -f /tmp/composer-setup.php
 
@@ -398,10 +402,10 @@ RUN set -ex \
 			-o \
 			\( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
 		\) -exec rm -rf '{}' + \
-	&& rm -rf /usr/src/python
+	&& rm -rf /usr/src/python \
 
 # make some useful symlinks that are expected to exist
-RUN cd /usr/local/bin \
+        && cd /usr/local/bin \
 	&& ln -s idle3 idle \
 	&& ln -s pydoc3 pydoc \
 	&& ln -s python3 python \
@@ -409,6 +413,11 @@ RUN cd /usr/local/bin \
 
 # if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
 ENV PYTHON_PIP_VERSION 10.0.1
+
+COPY LogAnalyzer.zip TunnelExtension.zip webssh.zip ssh /tmp/
+COPY startup.sh /
+COPY KuduStaticFiles/503.html /opt/Kudu/503.html
+
 
 RUN set -ex; \
 	\
@@ -427,16 +436,14 @@ RUN set -ex; \
 			-o \
 			\( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
 		\) -exec rm -rf '{}' +; \
-	rm -f get-pip.py
-
-
-RUN pip3 install virtualenv
+	rm -f get-pip.py \
+    && pip3 install virtualenv \
 
 # Install Kudu
-RUN npm install -g kudusync \
+  && npm install -g kudusync \
   && wget -O /tmp/Kudu.zip https://wawsinfraprodbay063.blob.core.windows.net/kudu/Kudu.75.10710.3480.zip \
   && unzip -q -o /tmp/Kudu.zip \
-  && mkdir /opt/Kudu \
+#  && mkdir /opt/Kudu \
   && cp -rf ./75.10710.3480/* /opt/Kudu \
   && rm -f /tmp/Kudu.zip \
   && rm -rf ./75.10710.3480 \
@@ -447,48 +454,43 @@ RUN npm install -g kudusync \
   && chmod 755 /opt/Kudu/bin/node_modules/.bin/kuduscript \
   && chmod 755 /opt/Kudu/bin/Scripts/starter.sh \
   && mkdir -p /opt/Kudu/local \
-  && chmod 755 /opt/Kudu/local
+  && chmod 755 /opt/Kudu/local \
 
-RUN echo "1234"
+
 # Install pm2 and pm2-logrotate
-RUN npm install pm2@latest -g \
+  && npm install pm2@latest -g \
   && pm2 install pm2-logrotate \
-  && pm2 set pm2-logrotate:retain 7
+  && pm2 set pm2-logrotate:retain 7 \
 
 # Install LogAnalyzer
-COPY LogAnalyzer.zip /tmp
-RUN mkdir /opt/LogAnalyzer \
+  && mkdir /opt/LogAnalyzer \
   && unzip /tmp/LogAnalyzer.zip -d /opt/LogAnalyzer \
-  && rm -f /tmp/LogAnalyzer.zip
+  && rm -f /tmp/LogAnalyzer.zip \
 
-COPY startup.sh /
-RUN chmod 755 /startup.sh \
-  && mkdir -p /home/LogFiles
+  && chmod 755 /startup.sh \
+  && mkdir -p /home/LogFiles \
 
 # Install TunnelExtension
-COPY TunnelExtension.zip /tmp
-RUN mkdir /opt/tunnelext \
-  && unzip /tmp/TunnelExtension.zip -d /opt/tunnelext
+  && mkdir /opt/tunnelext \
+  && unzip /tmp/TunnelExtension.zip -d /opt/tunnelext \
 
 # Install webssh
-COPY webssh.zip /tmp
-RUN mkdir /opt/webssh \
-  && unzip /tmp/webssh.zip -d /opt/webssh
+  && mkdir /opt/webssh \
+  && unzip /tmp/webssh.zip -d /opt/webssh \
 
 # Replace ssh with wrapper script for CIFS mount permissions workaround
-COPY ssh /tmp
-RUN mv /usr/bin/ssh /usr/bin/ssh.original \
+  && mv /usr/bin/ssh /usr/bin/ssh.original \
   && mv /tmp/ssh /usr/bin/ssh \
   && chown root:root /usr/bin/ssh \
-  && chmod 755 /usr/bin/ssh
+  && chmod 755 /usr/bin/ssh \
 
-COPY hostingstart.html /home/site/wwwroot/hostingstart.html
-COPY KuduStaticFiles/503.html /opt/Kudu/503.html
+#COPY hostingstart.html /home/site/wwwroot/hostingstart.html
+#COPY KuduStaticFiles/503.html /opt/Kudu/503.html
 #COPY KuduStaticFiles/_Layout.cshtml /opt/Kudu/_Layout.cshtml
 #COPY KuduStaticFiles/AppService.png /opt/Kudu/Content/Images/AppService.png
 #COPY KuduStaticFiles/linux_favicon.ico /opt/Kudu/linux_favicon.ico
 
-RUN chmod -R 777 /home \
+  && chmod -R 777 /home \
   && rm -rf /tmp/*
 
 #Instal Kudu
@@ -506,10 +508,9 @@ RUN echo "Sanchit 1234567891011" \
     && cd /opt/Kudu/KuduConsole \
     && npm install kuduscript \
     && cp -r ../node_modules . \
-    && chmod 777 -R Scripts 
+    && chmod 777 -R Scripts \
 #    && rm -r KuduLight
-
-RUN echo $(date) doing groupadd \
+    && echo $(date) doing groupadd \
     && groupadd -g "1002" "kudu_group" \
     && echo $(date) doing useradd \
     && useradd -u "1001" -g "kudu_group" "kudu_user" \
@@ -517,12 +518,7 @@ RUN echo $(date) doing groupadd \
     && chown -R "kudu_user":"kudu_group" /opt/Kudu \
     && echo $(date) doing tmp chown \
     && chown -R "kudu_user":"kudu_group" /tmp \
-    && chmod 777 /opt/Kudu \
-    && echo $(date) Running webssh \
-    && /bin/bash -c "node /opt/webssh/index.js &" \
-    && echo $(date) Starting Tunnel Server \
-#    && chmod 777 /opt/tunnelext/tunnelwatcher.sh \
-    && /bin/bash -c "/opt/tunnelext/tunnelwatcher.sh dotnet /opt/tunnelext/DebugExtension.dll &"
+    && chmod 777 /opt/Kudu/Kudu.Services.Web.dll 
 
 EXPOSE 8181
 
