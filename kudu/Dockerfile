@@ -229,8 +229,12 @@ RUN apt-get install -y unixodbc-dev freetds-dev freetds-bin \
   && rm -rf /var/lib/apt/lists/*
 
 # Install .NET Core SDK
-ENV DOTNET_SDK_VERSION="2.1.300" 
-ENV DOTNET_SDK_DOWNLOAD_URL="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz" DOTNET_SDK_DOWNLOAD_SHA="80a6bfb1db5862804e90f819c1adeebe3d624eae0d6147e5d6694333f0458afd7d34ce73623964752971495a310ff7fcc266030ce5aef82d5de7293d94d13770"
+#ENV DOTNET_SDK_VERSION="2.1.402" 
+#ENV DOTNET_SDK_DOWNLOAD_URL="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz" DOTNET_SDK_DOWNLOAD_SHA="dd7f15a8202ffa2a435b7289865af4483bb0f642ffcf98a1eb10464cb9c51dd1d771efbb6120f129fe9666f62707ba0b7c476cf1fd3536d3a29329f07456de48"
+
+ENV DOTNET_SDK_VERSION="2.2.100-preview2-009404"
+ENV DOTNET_SDK_DOWNLOAD_URL="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz" DOTNET_SDK_DOWNLOAD_SHA="05c4e4accea5cae674bfde24ac883ba7aa733686479621411a5d8fb9c030e0c053d5c0f2c4a4fb62bc8b0f651987ce0f33628ac8a26af1d5c7a4259b3cba7a21" 
+
 
 RUN curl -SL $DOTNET_SDK_DOWNLOAD_URL --output dotnet.tar.gz \
   && echo "$DOTNET_SDK_DOWNLOAD_SHA dotnet.tar.gz" | sha512sum -c - \
@@ -435,18 +439,18 @@ RUN set -ex; \
 
 # Install Kudu
   && npm install -g kudusync \
-  && wget -O /tmp/Kudu.zip https://wawsinfraprodbay063.blob.core.windows.net/kudu/Kudu.75.10710.3480.zip \
-  && unzip -q -o /tmp/Kudu.zip \
+#  && wget -O /tmp/Kudu.zip https://wawsinfraprodbay063.blob.core.windows.net/kudu/Kudu.75.10710.3480.zip \
+#  && unzip -q -o /tmp/Kudu.zip \
 #  && mkdir /opt/Kudu \
-  && cp -rf ./75.10710.3480/* /opt/Kudu \
-  && rm -f /tmp/Kudu.zip \
-  && rm -rf ./75.10710.3480 \
-  && cat /opt/Kudu/Web.config | \
-  sed 's|  <location path="." inheritInChildApplications="false">|  <location path="~/../../../opt/Kudu" inheritInChildApplications="false">|' > /opt/Kudu/Web.config2 \
-  && mv /opt/Kudu/Web.config2 /opt/Kudu/Web.config \
-  && chmod 755 /opt/Kudu/bin/kudu.exe \
-  && chmod 755 /opt/Kudu/bin/node_modules/.bin/kuduscript \
-  && chmod 755 /opt/Kudu/bin/Scripts/starter.sh \
+#  && cp -rf ./75.10710.3480/* /opt/Kudu \
+#  && rm -f /tmp/Kudu.zip \
+#  && rm -rf ./75.10710.3480 \
+#  && cat /opt/Kudu/Web.config | \
+#  sed 's|  <location path="." inheritInChildApplications="false">|  <location path="~/../../../opt/Kudu" inheritInChildApplications="false">|' > /opt/Kudu/Web.config2 \
+#  && mv /opt/Kudu/Web.config2 /opt/Kudu/Web.config \
+#  && chmod 755 /opt/Kudu/bin/kudu.exe \
+#  && chmod 755 /opt/Kudu/bin/node_modules/.bin/kuduscript \
+#  && chmod 755 /opt/Kudu/bin/Scripts/starter.sh \
   && mkdir -p /opt/Kudu/local \
   && chmod 755 /opt/Kudu/local \
 
@@ -465,8 +469,8 @@ RUN set -ex; \
   && mkdir -p /home/LogFiles \
 
 # Install TunnelExtension
-  && mkdir /opt/tunnelext \
-  && unzip /tmp/TunnelExtension.zip -d /opt/tunnelext \
+#  && mkdir /opt/tunnelext \
+#  && unzip /tmp/TunnelExtension.zip -d /opt/tunnelext \
 
 # Install webssh
   && mkdir /opt/webssh \
@@ -477,42 +481,40 @@ RUN set -ex; \
   && mv /tmp/ssh /usr/bin/ssh \
   && chown root:root /usr/bin/ssh \
   && chmod 755 /usr/bin/ssh \
-
-#COPY hostingstart.html /home/site/wwwroot/hostingstart.html
-#COPY KuduStaticFiles/503.html /opt/Kudu/503.html
-#COPY KuduStaticFiles/_Layout.cshtml /opt/Kudu/_Layout.cshtml
-#COPY KuduStaticFiles/AppService.png /opt/Kudu/Content/Images/AppService.png
-#COPY KuduStaticFiles/linux_favicon.ico /opt/Kudu/linux_favicon.ico
-
   && chmod -R 777 /home \
   && rm -rf /tmp/*
 
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+
+# Enable correct mode for dotnet watch (only mode supported in a container)
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+
+# Skip extraction of XML docs - generally not useful within an image/container - helps performance
+ENV NUGET_XMLDOC_MODE=skip
+
+
 #Instal Kudu
-RUN echo "Sanchit 1234567891011" \
+RUN pwd \
     && cd /opt/Kudu \
     && find . -name "*.cshtml" -type f -delete \
     && find . -name "*.dll" -type f -delete \
     && git clone https://github.com/sanchitmehta/KuduLight.git \
-#    && cp /tmp/Program.cs KuduLight/Kudu.Services.Web \
     && dotnet publish KuduLight/Kudu.sln --configuration Release \
-    && cp -r KuduLight/Kudu.Services.Web/bin/Release/netcoreapp2.1/publish/* /opt/Kudu/ \
+    && cp -r KuduLight/Kudu.Services.Web/bin/Release/netcoreapp2.2/publish/* /opt/Kudu/ \
     && mkdir /opt/Kudu/KuduConsole \
     && dotnet publish KuduLight/Kudu.Console --configuration Release \
-    && cp -r KuduLight/Kudu.Console/bin/Release/netcoreapp2.1/publish/* /opt/Kudu/KuduConsole/ \
+    && cp -r KuduLight/Kudu.Console/bin/Release/netcoreapp2.2/publish/* /opt/Kudu/KuduConsole/ \
+    && chmod -R +x /opt/Kudu/ \
+    && chmod -R +x node_modules \
     && cd /opt/Kudu/KuduConsole \
     && npm install kuduscript \
     && cp -r ../node_modules . \
-    && chmod 777 -R Scripts \
-#    && rm -r KuduLight
     && echo $(date) doing groupadd \
     && groupadd -g "1002" "kudu_group" \
     && echo $(date) doing useradd \
     && useradd -u "1001" -g "kudu_group" "kudu_user" \
-    && echo $(date) doing kudu chown \
-    && chown -R "kudu_user":"kudu_group" /opt/Kudu \
-    && echo $(date) doing tmp chown \
-    && chown -R "kudu_user":"kudu_group" /tmp \
-    && chmod 777 /opt/Kudu/Kudu.Services.Web.dll 
+    && chmod 777 /opt/Kudu/Kudu.Services.Web.dll \
+    && chmod 777 /tmp
 
 EXPOSE 8181
 
